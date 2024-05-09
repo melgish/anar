@@ -28,9 +28,7 @@ internal sealed class InfluxService : IInfluxService {
 
             // Original timestamp on the inverter to eliminate duplicates.
             // Total will be logged using most recent report.
-            var points = inverters
-                .Select(i => i.ToPointData(WritePrecision.S))
-                .ToArray();
+            var points = inverters.Select(i => i.ToPointData()).ToArray();
 
             await api.WritePointsAsync(
                 points, 
