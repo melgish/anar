@@ -27,6 +27,13 @@ internal sealed class GatewayClient : IGatewayClient
         _logger = logger;  
         _options = options.Value;
         _httpClient = httpClient;
+
+        var count = _options.Layout.Length;
+        if (count == 0) {
+            _logger.LogWarning(LogEvent.NoArrayLayout, "No array layout specified");
+        } else {
+            _logger.LogInformation(LogEvent.ArrayLayoutCount, "Using array layout with {Count} locations", count);
+        }
     }
 
     /// <summary>
