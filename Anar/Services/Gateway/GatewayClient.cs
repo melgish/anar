@@ -50,7 +50,6 @@ internal sealed class GatewayClient : IGatewayClient
 
             return inverters;
         } catch (Exception ex) {
-
             _logger.LogWarning(LogEvent.GetInvertersFailed, ex, "Failed to get inverters");
             return [];
         }

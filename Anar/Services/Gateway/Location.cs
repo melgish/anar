@@ -3,7 +3,7 @@ namespace Anar.Services;
 /// <summary>
 /// Encapsulates the location of a single panel / inverter.
 /// </summary>
-internal sealed class Location
+public sealed class Location
 {
     /// <summary>
     /// Name of the array where the inverter is located.
@@ -21,7 +21,7 @@ internal sealed class Location
     public string SerialNumber { get; init; } = default!;
 
     /// <summary>
-    /// Convert facing to a string
+    /// Convert facing to a string.
     /// </summary>
     public string Facing
     {

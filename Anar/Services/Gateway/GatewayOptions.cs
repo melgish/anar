@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Anar.Services;
 
-internal sealed class GatewayOptions
+public sealed class GatewayOptions
 {
     /// <summary>
     /// Polling interval

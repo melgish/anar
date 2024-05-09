@@ -5,11 +5,11 @@ namespace Anar.Services;
 
 internal static class DomainExtensions
 {
-    public static PointData ToPointData(this Inverter inverter, WritePrecision precision)
+    public static PointData ToPointData(this Inverter inverter)
     {
         var point = PointData
             .Measurement("inverter")
-            .Timestamp(inverter.LastReportDate, precision)
+            .Timestamp(inverter.LastReportDate, WritePrecision.S)
             .Field("watts", inverter.LastReportWatts)
             .Tag("serialNumber", inverter.SerialNumber);
 
