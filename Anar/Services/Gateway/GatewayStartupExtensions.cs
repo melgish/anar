@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Text.Json.Nodes;
+using Serilog;
 
 namespace Anar.Services;
 
@@ -38,8 +39,9 @@ internal static class GatewayStartupExtensions
                     })
                     .ToArray();
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warning(ex, "Failed to parse load array layout file.");
             return [];
         }
 #nullable restore
@@ -51,12 +53,21 @@ internal static class GatewayStartupExtensions
             .AddOptions<GatewayOptions>()
             .Configure<IConfiguration>((options, configuration) =>
             {
-                configuration.GetSection(nameof(GatewayOptions)).Bind(options);
+                configuration.Bind(nameof(GatewayOptions), options);
+
                 // Allow layout to be specified entirely in the config file,
-                // but if file is specified, use that instead.
-                if (!string.IsNullOrWhiteSpace(options.LayoutFile)) {
-                    options.Layout = GetArrayLayout(options.LayoutFile);
+                // but if file is specified, import that instead.
+                if (string.IsNullOrWhiteSpace(options.LayoutFile)) {
+                    Log.Information("Layout file has not been provided");
+                    return;
                 }
+
+                if (!File.Exists(options.LayoutFile)) {
+                    Log.Warning("Layout file '{FileName}' not found", options.LayoutFile);
+                    return;
+                }
+
+                options.Layout = GetArrayLayout(options.LayoutFile);
             })
             .ValidateDataAnnotations()
             .ValidateOnStart();

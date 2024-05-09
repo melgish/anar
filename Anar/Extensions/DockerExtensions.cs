@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration.Json;
+using Serilog;
 
 namespace Anar.Extensions;
 
@@ -13,8 +14,14 @@ public static class DockerExtensions {
   /// <returns></returns>
   public static ConfigurationManager AddDockerConfiguration(this ConfigurationManager configuration) {
     var fileName = Environment.GetEnvironmentVariable(APP_SETTINGS_DOCKER);
-    if (string.IsNullOrWhiteSpace(fileName) || !File.Exists(fileName))
+    if (string.IsNullOrWhiteSpace(fileName)) {
+      Log.Logger.Information("APP_SETTINGS_DOCKER is not set");
+      return configuration;
+    }
+    Log.Logger.Information("Adding {FileName} to configuration", fileName);
+    if (!File.Exists(fileName))
     {
+      Log.Logger.Warning("APP_SETTINGS_DOCKER {FileName} does not exist", fileName);
       return configuration;
     }
 
