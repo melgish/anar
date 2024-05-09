@@ -22,6 +22,7 @@ internal sealed class Worker : BackgroundService
     }
 
     private async Task ProcessData(CancellationToken stoppingToken) {
+        _logger.LogDebug("Processing");
         var inverters = await _gatewayClient.GetInvertersAsync(stoppingToken);
         await _influxService.WriteAsync(inverters, stoppingToken);
     }
@@ -29,7 +30,7 @@ internal sealed class Worker : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         try {
-            _logger.LogInformation(LogEvent.PollingStarted, "Starting polling");
+            _logger.LogInformation("Starting polling");
             while (!stoppingToken.IsCancellationRequested)
             {
                 await ProcessData(stoppingToken);
@@ -37,10 +38,10 @@ internal sealed class Worker : BackgroundService
             }
         }
         catch (OperationCanceledException) {
-            // These are expected
+            // These are expected on CTRL-C shutdown
         }
         catch (Exception ex) {
-            _logger.LogError(LogEvent.WorkerError, ex, "Worker error");
+            _logger.LogError(ex, "Worker error");
         }
     }
 }

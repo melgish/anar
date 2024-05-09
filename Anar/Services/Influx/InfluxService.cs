@@ -10,7 +10,7 @@ internal sealed class InfluxService : IInfluxService {
     private readonly ILogger<InfluxService> _logger;
     private readonly InfluxOptions _options;
     public InfluxService(
-        ILogger<InfluxService> logger, 
+        ILogger<InfluxService> logger,
         IOptions<InfluxOptions> options
     ) {
         _logger = logger;
@@ -20,6 +20,7 @@ internal sealed class InfluxService : IInfluxService {
     public async Task WriteAsync(IEnumerable<Inverter> inverters, CancellationToken cancellationToken = default) {
         // Do not log empty collections.
         if (!inverters.Any()) {
+            _logger.LogDebug("No inverers to write");
             return;
         }
         try {
@@ -31,9 +32,9 @@ internal sealed class InfluxService : IInfluxService {
             var points = inverters.Select(i => i.ToPointData()).ToArray();
 
             await api.WritePointsAsync(
-                points, 
-                _options.Bucket, 
-                _options.Organization, 
+                points,
+                _options.Bucket,
+                _options.Organization,
                 cancellationToken
             );
 
@@ -41,7 +42,7 @@ internal sealed class InfluxService : IInfluxService {
             // Use most-recent inverter report to set time on total.
             var wattsNow = inverters.Sum(i => i.LastReportWatts);
             var now = inverters.Max(i => i.LastReportDate);
-            _logger.LogInformation(LogEvent.CurrentOutput, "CurrentOutput {WattsNow}", wattsNow);
+            _logger.LogInformation("CurrentOutput {Timestamp} {WattsNow}", now, wattsNow);
 
             await api.WritePointAsync(PointData
                 .Measurement("totals")
@@ -53,7 +54,7 @@ internal sealed class InfluxService : IInfluxService {
             );
         }
         catch (Exception ex) {
-            _logger.LogWarning(LogEvent.WriteInvertersFailed, ex, "Failed to get inverters");
+            _logger.LogWarning(ex, "Failed to write data");
         }
     }
 }

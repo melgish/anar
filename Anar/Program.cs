@@ -4,22 +4,22 @@ using Anar.Services;
 
 using Serilog;
 
-// The down side to doing this here is that starup logging used base config.
+// Use static log during startup to log any configuration warnings or errors.
 Log.Logger = new LoggerConfiguration()
   .Enrich.FromLogContext()
   .WriteTo.Console()
   .CreateBootstrapLogger();
 
 try {
+
   var builder = Host.CreateApplicationBuilder(args);
   builder.Configuration.AddDockerConfiguration();
 
-  // Now that configuration is augmented add the real logger.
+  // Now that configuration is augmented add the real logger
+  // using appsettings and services.
   builder.Services.AddSerilog((services, cfg) => cfg
     .ReadFrom.Configuration(builder.Configuration)
     .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console()
   );
 
   builder.Services.AddGatewayClient();
@@ -28,6 +28,7 @@ try {
 
   var host = builder.Build();
   host.Run();
+
 } catch (Exception ex) {
   Log.Fatal(ex, "Host terminated unexpectedly");
 } finally {
