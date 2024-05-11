@@ -52,9 +52,13 @@ internal sealed class GatewayClient : IGatewayClient
         try {
             var inverters = await _httpClient
                 .GetFromJsonAsync<Inverter[]>(path, cancellationToken) ?? [];
+            // Do a bit of normalization.
+            inverters = inverters.OrderBy(e => e.SerialNumber).ToArray();
 
             // Apply location data if available.
-            Array.ForEach(inverters, i => i.Location = Locate(i.SerialNumber));
+            Array.ForEach(inverters, i => {
+                i.Location = Locate(i.SerialNumber);
+            });
 
             return inverters;
         } catch (Exception ex) {

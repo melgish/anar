@@ -24,7 +24,8 @@ internal sealed class Worker : BackgroundService
     private async Task ProcessData(CancellationToken stoppingToken) {
         _logger.LogDebug("Processing");
         var inverters = await _gatewayClient.GetInvertersAsync(stoppingToken);
-        await _influxService.WriteAsync(inverters, stoppingToken);
+        await _influxService.WriteInvertersAsync(inverters, stoppingToken);
+        await _influxService.WriteTotalsAsync(inverters, stoppingToken);
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

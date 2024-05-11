@@ -17,7 +17,47 @@ internal sealed class InfluxService : IInfluxService {
         _options = options.Value;
     }
 
-    public async Task WriteAsync(IEnumerable<Inverter> inverters, CancellationToken cancellationToken = default) {
+    public async Task WriteTotalsAsync(IEnumerable<Inverter> inverters, CancellationToken cancellationToken = default) {
+        // Do not log empty collections.
+        if (!inverters.Any())
+        {
+            _logger.LogDebug("No totals to write");
+            return;
+        }
+
+        // https://enphase.com/download/accessing-iq-gateway-local-apis-or-local-ui-token-based-authentication
+        // Early on, it was possible to read totals from an endpoint.
+        // /api/v1/production. At some point my system firmware was upgraded and
+        // that endpoint only returns zeros.  The alternative endpoint
+        // ivp/pdm/energy does not work either. That one returns a 401.
+
+        // So instead just add up all the inverter values.
+
+        // Summing watts for current output.
+        // Use most-recent inverter report to set time on total.
+        var wattsNow = inverters.Sum(i => i.LastReportWatts);
+        var now = inverters.Max(i => i.LastReportDate);
+        _logger.LogInformation("CurrentOutput {Timestamp} {WattsNow}", now, wattsNow);
+
+        try {
+            using var client = new InfluxDBClient(_options.Uri.ToString(), _options.Token);
+            var api = client.GetWriteApiAsync();
+            await api.WritePointAsync(PointData
+                .Measurement("totals")
+                .Field("wattsNow", wattsNow)
+                .Timestamp(now, WritePrecision.S),
+                _options.Bucket,
+                _options.Organization,
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to write totals data");
+        }
+    }
+
+    public async Task WriteInvertersAsync(IEnumerable<Inverter> inverters, CancellationToken cancellationToken = default) {
         // Do not log empty collections.
         if (!inverters.Any()) {
             _logger.LogDebug("No inverers to write");
@@ -37,24 +77,9 @@ internal sealed class InfluxService : IInfluxService {
                 _options.Organization,
                 cancellationToken
             );
-
-            // Summing watts for current output.
-            // Use most-recent inverter report to set time on total.
-            var wattsNow = inverters.Sum(i => i.LastReportWatts);
-            var now = inverters.Max(i => i.LastReportDate);
-            _logger.LogInformation("CurrentOutput {Timestamp} {WattsNow}", now, wattsNow);
-
-            await api.WritePointAsync(PointData
-                .Measurement("totals")
-                .Field("wattsNow", wattsNow)
-                .Timestamp(now, WritePrecision.S),
-                _options.Bucket,
-                _options.Organization,
-                cancellationToken
-            );
         }
         catch (Exception ex) {
-            _logger.LogWarning(ex, "Failed to write data");
+            _logger.LogWarning(ex, "Failed to write inveter data");
         }
     }
 }
