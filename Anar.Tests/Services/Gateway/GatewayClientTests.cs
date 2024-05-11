@@ -98,7 +98,6 @@ public class GatewayClientTests
         var result = await client.GetInvertersAsync();
 
         Assert.Empty(result);
-        Assert.Equal(LogEvent.GetInvertersFailed, _fakeLogger.LatestRecord.Id);
+        Assert.Matches("get inverters", _fakeLogger.LatestRecord.Message);
     }
-
 }
