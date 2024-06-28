@@ -52,6 +52,7 @@ internal sealed class GatewayClient : IGatewayClient
         try {
             var inverters = await _httpClient
                 .GetFromJsonAsync<Inverter[]>(path, cancellationToken) ?? [];
+
             // Do a bit of normalization.
             inverters = inverters.OrderBy(e => e.SerialNumber).ToArray();
 
