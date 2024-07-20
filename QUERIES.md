@@ -6,7 +6,7 @@ The queries below can be used in the InfluxDB Gui or Grafana for building
 dashboards.
 
 ## Current Output (Now)
-This used to be available via `/api/v1/production`. It stopped working on my system after a firmeware upgrade. You may have better luck.
+This used to be available via `/api/v1/production`. It stopped working on my system after a firmware upgrade. You may have better luck.
 
 ```javascript
 from(bucket: "solar")

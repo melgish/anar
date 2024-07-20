@@ -5,4 +5,4 @@ services:
       dockerfile: ./Dockerfile
     container_name: "anar"
     hostname: "anar"
-    image: "127.0.0.1/library/anar:latest"
+    image: "anar"
