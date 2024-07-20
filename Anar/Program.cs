@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using Anar;
 using Anar.Extensions;
 using Anar.Services;
@@ -10,27 +12,34 @@ Log.Logger = new LoggerConfiguration()
   .WriteTo.Console()
   .CreateBootstrapLogger();
 
-try {
 
-  var builder = Host.CreateApplicationBuilder(args);
-  builder.Configuration.AddDockerConfiguration();
+try
+{
+    var name = Assembly.GetExecutingAssembly().GetName();
+    Log.Information("{AssemblyName} v{Version}", name.Name, name.Version);
 
-  // Now that configuration is augmented add the real logger
-  // using appsettings and services.
-  builder.Services.AddSerilog((services, cfg) => cfg
-    .ReadFrom.Configuration(builder.Configuration)
-    .ReadFrom.Services(services)
-  );
+    var builder = Host.CreateApplicationBuilder(args);
+    builder.Configuration.AddDockerConfiguration();
 
-  builder.Services.AddGatewayClient();
-  builder.Services.AddInfluxDB();
-  builder.Services.AddHostedService<Worker>();
+    // Now that configuration is augmented add the real logger
+    // using appsettings and services.
+    builder.Services.AddSerilog((services, cfg) => cfg
+      .ReadFrom.Configuration(builder.Configuration)
+      .ReadFrom.Services(services)
+    );
 
-  var host = builder.Build();
-  host.Run();
+    builder.Services.AddGatewayClient();
+    builder.Services.AddInfluxDB();
+    builder.Services.AddHostedService<Worker>();
 
-} catch (Exception ex) {
-  Log.Fatal(ex, "Host terminated unexpectedly");
-} finally {
-  Log.CloseAndFlush();
+    var host = builder.Build();
+    host.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
 }
