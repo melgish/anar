@@ -489,3 +489,4 @@ appsettings.local.json
 appsettings.docker.json
 compose.override.yaml
 .mono
+.env
