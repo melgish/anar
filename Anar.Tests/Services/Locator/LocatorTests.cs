@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Testing;
+
 using System.IO.Abstractions.TestingHelpers;
 
 namespace Anar.Services.Locator.Tests;
@@ -11,36 +12,16 @@ public class LocatorTests
     public LocatorTests()
     {
         _fileSystem = new MockFileSystem(new Dictionary<string, MockFileData>
+        {
             {
-                {
-                    @"C:\layout.json",
-                    new MockFileData("""
-                     {
-                       "arrays": [
-                         {
-                           "label": "Array 1",
-                           "azimuth": 180,
-                           "modules": [
-                             {   "inverter": { "serial_num": "SN123" } },
-                             {   "inverter": { "serial_num": "SN124" } }
-                           ]
-                         },
-                         {
-                           "label": "Array 2",
-                           "azimuth": 90,
-                           "modules": [
-                             {   "inverter": { "serial_num": "SN125" } }
-                           ]
-                         }
-                       ]
-                     }
-                    """)
-                },
-                {
-                    @"C:\corrupt.json",
-                    new MockFileData("this is not json")
-                }
-            });
+                @"C:\layout.json",
+                new MockFileData(TestData.LayoutFileJSON)
+            },
+            {
+                @"C:\corrupt.json",
+                new MockFileData(TestData.CorruptFileJSON)
+            }
+        });
 
         _logger = new();
     }
@@ -52,14 +33,8 @@ public class LocatorTests
         var options = new LocatorOptions { LayoutFile = @"C:\layout.json" };
         var locator = new Locator(_fileSystem, options, _logger);
 
-        Location[] expected = [
-            new Location("SN123", "Array 1", 180),
-            new Location("SN124", "Array 1", 180),
-            new Location("SN125", "Array 2", 90)
-        ];
-
         // Assert
-        Assert.Equal(expected, locator.Locations);
+        Assert.Equal(TestData.LayoutFileLocations, locator.Locations);
         Assert.Matches("Loaded 3 locations", _logger.LatestRecord.Message);
         // Assert that the same instance is returned
         Assert.Same(locator.Locations, locator.Locations);
