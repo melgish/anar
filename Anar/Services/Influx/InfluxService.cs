@@ -41,7 +41,7 @@ internal sealed class InfluxService(
             var api = client.GetWriteApiAsync();
 
             await api.WritePointsAsync(points, opts.Bucket, opts.Organization, cancellationToken);
-            logger.LogInformation("Wrote {Count} points to {Bucket}", points.Count, opts.Bucket);
+            logger.LogDebug("Wrote {Count} points to {Bucket}", points.Count, opts.Bucket);
         }
         catch (Exception ex)
         {
