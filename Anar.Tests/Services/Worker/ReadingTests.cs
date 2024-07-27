@@ -11,7 +11,8 @@ public sealed class ReadingTests
     {
         // Arrange
         var location = new Location("123", "Array 1", 180);
-        var inverter = new Inverter {
+        var inverter = new Inverter
+        {
             SerialNumber = "123",
             LastReportDate = 17123450,
             LastReportWatts = 1000

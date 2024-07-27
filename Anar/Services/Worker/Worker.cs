@@ -9,7 +9,7 @@ namespace Anar.Services.Worker;
 internal sealed class Worker(
     WorkerOptions options,
     ILocator locator,
-    IGatewayClient gatewayClient,
+    IGateway gatewayClient,
     IInfluxService influxService,
     ILogger<Worker> logger
 ) : BackgroundService
@@ -17,7 +17,7 @@ internal sealed class Worker(
     public Worker(
         IOptions<WorkerOptions> options,
         ILocator locator,
-        IGatewayClient gatewayClient,
+        IGateway gatewayClient,
         IInfluxService influxService,
         ILogger<Worker> logger
     ) : this(options.Value, locator, gatewayClient, influxService, logger) { }
@@ -53,8 +53,9 @@ internal sealed class Worker(
         await influxService.WritePointsAsync(
             readings
                 .Select(r => r.ToPointData())
-                .Append(wattsNow.ToPointData()
-        ), stoppingToken);
+                .Append(wattsNow.ToPointData())
+                .ToList()
+        , stoppingToken);
     }
 
     /// <summary>

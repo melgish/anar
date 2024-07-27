@@ -1,20 +1,22 @@
-using Microsoft.Extensions.Logging.Testing;
-
 using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
-using MyWorker = Anar.Services.Worker.Worker;
 using Anar.Services.Worker;
 
-using Moq;
 using InfluxDB.Client.Writes;
+
+using Microsoft.Extensions.Logging.Testing;
+
+using Moq;
+
+using MyWorker = Anar.Services.Worker.Worker;
 
 namespace Anar.Tests.Services.Worker;
 
 public sealed class WorkerTests
 {
     readonly Mock<ILocator> locator = new();
-    readonly Mock<IGatewayClient> gatewayClient = new();
+    readonly Mock<IGateway> gatewayClient = new();
     readonly WorkerOptions options = new() { Interval = TimeSpan.FromSeconds(15) };
 
     private void Setup(IList<Inverter> results, IList<Location> locations)
@@ -47,7 +49,7 @@ public sealed class WorkerTests
         // Assert
         influxService.Verify(x =>
             x.WritePointsAsync(
-                It.IsAny<IEnumerable<PointData>>(),
+                It.IsAny<List<PointData>>(),
                 It.IsAny<CancellationToken>()
             ), Times.Never);
     }
@@ -76,7 +78,7 @@ public sealed class WorkerTests
         // Assert
         influxService.Verify(x =>
             x.WritePointsAsync(
-                It.IsAny<IEnumerable<PointData>>(),
+                It.IsAny<List<PointData>>(),
                 It.IsAny<CancellationToken>()
             ), Times.Once);
     }

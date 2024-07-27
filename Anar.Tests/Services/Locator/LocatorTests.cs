@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging.Testing;
-
 using System.IO.Abstractions.TestingHelpers;
+
+using Microsoft.Extensions.Logging.Testing;
 
 namespace Anar.Services.Locator.Tests;
 
@@ -76,4 +76,3 @@ public class LocatorTests
         Assert.Matches("No layout file specified", _logger.LatestRecord.Message);
     }
 }
-

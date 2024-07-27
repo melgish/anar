@@ -1,5 +1,6 @@
 using Anar.Services.Gateway;
 using Anar.Services.Locator;
+
 using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Writes;
 
@@ -21,4 +22,3 @@ internal sealed record Reading(Inverter Inverter, Location? Location)
             (p) => p.Tag("arrayName", Location!.ArrayName).Tag("facing", Location!.Facing)
         );
 }
-

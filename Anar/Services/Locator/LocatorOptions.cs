@@ -1,6 +1,7 @@
 namespace Anar.Services.Locator;
 
-internal sealed record LocatorOptions {
+internal sealed record LocatorOptions
+{
     /// <summary>
     /// Name of file containing array layout.  Optional but must point to
     /// existing file if specified.
