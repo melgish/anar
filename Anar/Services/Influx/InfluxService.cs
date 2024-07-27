@@ -1,72 +1,51 @@
 using InfluxDB.Client;
-using InfluxDB.Client.Api.Domain;
 using InfluxDB.Client.Writes;
 
 using Microsoft.Extensions.Options;
 
-namespace Anar.Services;
+namespace Anar.Services.Influx;
 
-internal sealed class InfluxService : IInfluxService
+/// <summary>
+/// Accessor to write data to influxdb in batches of points.
+/// </summary>
+internal interface IInfluxService
 {
-    private readonly ILogger<InfluxService> _logger;
-    private readonly InfluxOptions _options;
-    public InfluxService(
-        ILogger<InfluxService> logger,
-        IOptions<InfluxOptions> options
-    )
+    /// <summary>
+    /// Writes a collection of point values to influx db
+    /// </summary>
+    /// <param name="points">Collection of points to write</param>
+    /// <param name="cancellationToken"></param>
+    Task WritePointsAsync(List<PointData> points, CancellationToken cancellationToken = default);
+}
+
+/// <summary>
+/// Implements IInfluxService
+/// </summary>
+internal sealed class InfluxService(
+    IOptions<InfluxOptions> options,
+    ILogger<InfluxService> logger
+) : IInfluxService
+{
+    /// <summary>
+    /// Writes a collection of point values to influx db
+    /// </summary>
+    /// <param name="points">Collection of points to write</param>
+    /// <param name="cancellationToken"></param>
+    public async Task WritePointsAsync(List<PointData> points, CancellationToken cancellationToken = default)
     {
-        _logger = logger;
-        _options = options.Value;
-    }
-
-    // https://enphase.com/download/accessing-iq-gateway-local-apis-or-local-ui-token-based-authentication
-    // Early on, it was possible to read totals from an endpoint.
-    // /api/v1/production. At some point my system firmware was upgraded and
-    // that endpoint only returns zeros.  The alternative endpoint
-    // ivp/pdm/energy does not work either. That one returns a 401.
-
-
-    public async Task WriteInvertersAsync(IEnumerable<Inverter> inverters, CancellationToken cancellationToken = default)
-    {
-        // Do not log empty collections.
-        if (!inverters.Any())
-        {
-            _logger.LogDebug("No inverters to write");
-            return;
-        }
-        // Original timestamp on the inverter to eliminate duplicates.
-        // Total will be logged using most recent report.
-        var points = inverters.Select(i => i.ToPointData()).ToArray();
-        // Summing watts for current output.
-        // Use most-recent inverter report to set time on total.
-        var wattsNow = inverters.Sum(i => i.LastReportWatts);
-        var now = inverters.Max(i => i.LastReportDate);
-        _logger.LogInformation("CurrentOutput {Timestamp} {WattsNow}", now, wattsNow);
-
         try
         {
-            using var client = new InfluxDBClient(_options.Uri.ToString(), _options.Token);
+            var opts = options.Value;
+
+            using var client = new InfluxDBClient(opts.Uri.ToString(), opts.Token);
             var api = client.GetWriteApiAsync();
 
-            await api.WritePointsAsync(
-                points,
-                _options.Bucket,
-                _options.Organization,
-                cancellationToken
-            );
-
-            await api.WritePointAsync(PointData
-                .Measurement("totals")
-                .Field("wattsNow", wattsNow)
-                .Timestamp(now, WritePrecision.S),
-                _options.Bucket,
-                _options.Organization,
-                cancellationToken
-            );
+            await api.WritePointsAsync(points, opts.Bucket, opts.Organization, cancellationToken);
+            logger.LogDebug("Wrote {Count} points to {Bucket}", points.Count, opts.Bucket);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to write inverter data");
+            logger.LogWarning(ex, "Failed to write points");
         }
     }
 }

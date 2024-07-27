@@ -1,26 +1,15 @@
 using System.Text.Json.Serialization;
 
-namespace Anar.Services;
+namespace Anar.Services.Gateway;
 
-internal sealed class Inverter {
+internal sealed record Inverter
+{
     [JsonPropertyName("serialNumber")]
-    public string SerialNumber { get; set; } = default!;
+    public string SerialNumber { get; init; } = string.Empty;
 
     [JsonPropertyName("lastReportDate")]
-    public int LastReportDate { get; set; }
-
-    [JsonPropertyName("devType")]
-    public int DeviceType { get; set; }
+    public int LastReportDate { get; init; }
 
     [JsonPropertyName("lastReportWatts")]
-    public int LastReportWatts { get; set; }
-
-    [JsonPropertyName("maxReportWatts")]
-    public int MaxReportWatts { get; set; }
-
-    /// <summary>
-    /// Additional information if available from array_layout_x.json
-    /// </summary>
-    [JsonIgnore]
-    public Location? Location { get; set; }
+    public int LastReportWatts { get; init; }
 }

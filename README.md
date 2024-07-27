@@ -18,19 +18,45 @@ additional location for an appsettings style config file.  This can be
 `/config-name` to load from a docker config, or `/run/secrets/secret-name` to
 load from a docker secret.
 
-## GatewayOptions
+## Gateway
 This section controls settings for communicating with an Enphase IQ gateway.
 Enphase does not make direct access easy.
 
-### GatewayOptions : Interval (TimeSpan) default = 0.00:05:00
-This setting controls how often to poll the data from the gateway.
+### Gateway : Thumbprint (string)
+This is the SHA-1 value of the self-signed certificate of your Enphase gateway.
+You can capture this by reviewing browser security settings.  Value is a stream
+of hex digits with no punctuation.
 
-### GatewayOptions : Layout (Location[]) default []
-This optional setting provides a way to embed layout data directly into
-`appsettings.json` Layout data can be used to augment the InfluxDB data with
-additional tags, but requires detailed information about your installation.
+### Gateway : Token (string)
+This is the security token the system should use when accessing your gateway.
+[This Technical Brief](https://enphase.com/download/accessing-iq-gateway-local-apis-or-local-ui-token-based-authentication)
+describes one way to get one.
 
-### GatewayOptions : LayoutFile (string)
+### Gateway : Uri (string)
+This is the web address of your gateway. Usually it is going to be a local IP
+like `https://192.168.1.10`, but your setup may be different than mine.
+
+## Influx
+These options control how the app will connect to an InfluxDB database.
+
+### Influx : Bucket (string)
+This is the data bucket to insert data to.
+
+### Influx : Organization (string)
+This is the organization associated with the token.
+
+### Influx : Token (string)
+This is the InfluxDB authentication token.
+
+### Influx : Uri
+This is the web address of your database. For example `http://influxdb:8086`.
+Your setup may be different than mine.
+
+## Locator
+These options control additional data that can be joined with inverter data
+from the gateway.
+
+### Locator : LayoutFile (string)
 This optional setting provides an alternative to Layout above. Instead of
 embedding the location array directly, layout information can be imported from
 `array_layout_x.json` which is one of the files downloaded in the background
@@ -38,35 +64,11 @@ when you view your system on the
 [Enlighten Website](https://enlighten.enphaseenergy.com/). You'll need to use
 browser developer tools to capture this file.
 
-### GatewayOptions : Thumbprint (string)
-This is the SHA-1 value of the self-signed certificate of your Enphase gateway.
-You can capture this by reviewing browser security settings.  Value is a stream
-of hex digits with no punctuation.
+## Worker
+These settings control how often the worker will capture and upload data.
 
-### GatewayOptions : Token (string)
-This is the security token the system should use when accessing your gateway.
-[This Technical Brief](https://enphase.com/download/accessing-iq-gateway-local-apis-or-local-ui-token-based-authentication)
-describes one way to get one.
-
-### GatewayOptions : Uri (string)
-This is the web address of your gateway. Usually it is going to be a local IP
-like `https://192.168.1.10`, but your setup may be different than mine.
-
-## InfluxOptions
-These options control how the app will connect to an InfluxDB database.
-
-### InfluxOptions : Bucket (string)
-This is the data bucket to insert data to.
-
-### InfluxOptions : Organization (string)
-This is the organization associated with the token.
-
-### InfluxOptions : Token (string)
-This is the InfluxDB authentication token.
-
-### InfluxOptions : Uri
-This is the web address of your database. For example `http://influxdb:8086`.
-Your setup may be different than mine.
+### Worker : Interval (TimeSpan) default = 0.00:05:00
+This setting controls how often to poll the data from the gateway.
 
 # Building
 Most of the ways you can build .NET apps will work. In addition a compose.yaml

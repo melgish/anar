@@ -3,6 +3,10 @@ using System.Reflection;
 using Anar;
 using Anar.Extensions;
 using Anar.Services;
+using Anar.Services.Gateway;
+using Anar.Services.Influx;
+using Anar.Services.Locator;
+using Anar.Services.Worker;
 
 using Serilog;
 
@@ -11,7 +15,6 @@ Log.Logger = new LoggerConfiguration()
   .Enrich.FromLogContext()
   .WriteTo.Console()
   .CreateBootstrapLogger();
-
 
 try
 {
@@ -28,9 +31,40 @@ try
       .ReadFrom.Services(services)
     );
 
-    builder.Services.AddGatewayClient();
-    builder.Services.AddInfluxDB();
-    builder.Services.AddHostedService<Worker>();
+    // Gateway
+    builder.Services
+        .AddSingleton<ClientHandler>()
+        .AddHttpClient<IGateway, Gateway>()
+        .ConfigurePrimaryHttpMessageHandler<ClientHandler>();
+    builder.Services
+        .AddOptions<GatewayOptions>()
+        .BindConfiguration("Gateway")
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Influx
+    builder.Services
+        .AddSingleton<IInfluxService, InfluxService>()
+        .AddOptions<InfluxOptions>()
+        .Bind(builder.Configuration.GetSection("Influx"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
+
+    // Locator
+    builder.Services
+      .AddSingleton<ILocator, Locator>()
+      .AddOptions<LocatorOptions>()
+      .Bind(builder.Configuration.GetSection("Locator"))
+      .ValidateDataAnnotations()
+      .ValidateOnStart();
+
+    // Worker
+    builder.Services
+        .AddHostedService<Worker>()
+        .AddOptions<WorkerOptions>()
+        .Bind(builder.Configuration.GetSection("Worker"))
+        .ValidateDataAnnotations()
+        .ValidateOnStart();
 
     var host = builder.Build();
     host.Run();

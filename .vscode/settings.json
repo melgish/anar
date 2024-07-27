@@ -4,6 +4,8 @@
     "appsettings",
     "Arien",
     "Enphase",
-    "Serilog"
+    "Serilog",
+    "reportgenerator",
+    "globaltool"
   ]
 }
