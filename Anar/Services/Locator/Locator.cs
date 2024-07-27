@@ -46,7 +46,7 @@ internal sealed class Locator(
     /// <param name="fileSystem">File system accessor.</param>
     /// <param name="options">Configuration options accessor.</param>
     /// <param name="logger">Logger instance.e</param>
-    public IList<Location> LoadFromFile(string fileName)
+    internal IList<Location> LoadFromFile(string fileName)
     {
         try
         {
