@@ -36,3 +36,4 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: .coverage/coverage.opencover.xml
+        verbose: true
