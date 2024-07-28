@@ -1,5 +1,10 @@
 # Anar
 
+ [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+ [![.NET](https://github.com/melgish/anar/actions/workflows/dotnet.yml/badge.svg)](https://github.com/melgish/anar/actions/workflows/dotnet.yml)
+ [![CodeQL](https://github.com/melgish/anar/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/melgish/anar/actions/workflows/github-code-scanning/codeql)
+ [![codecov](https://codecov.io/github/melgish/anar/graph/badge.svg?token=Q7HPKX12NH)](https://codecov.io/github/melgish/anar)
+
 On Tolkien's Middle-Earth, Anar is the sun. A vessel piloted through
 the heavens by the Maia Arien after the fall of the Two Trees.
 
