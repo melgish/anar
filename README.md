@@ -30,7 +30,7 @@ Enphase does not make direct access easy.
 ### Gateway : Thumbprint (string)
 This is the SHA-1 value of the self-signed certificate of your Enphase gateway.
 You can capture this by reviewing browser security settings.  Value is a stream
-of hex digits with no punctuation.
+of hex digits. Colons or Dashes between characters (AB:CD:EF) will be ignored.
 
 ### Gateway : Token (string)
 This is the security token the system should use when accessing your gateway.

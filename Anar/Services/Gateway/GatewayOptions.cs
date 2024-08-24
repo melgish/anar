@@ -1,15 +1,31 @@
 // spell-checker: words Enphase
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 namespace Anar.Services.Gateway;
 
-internal sealed class GatewayOptions
+internal sealed partial class GatewayOptions
 {
+    [ExcludeFromCodeCoverage]
+    [GeneratedRegex("[^0-9A-F]", RegexOptions.IgnoreCase, "en-US")]
+    public static partial Regex NonHexDigitsRegex();
+
+    /// <summary>
+    /// Backing store for Thumbprint property.
+    /// </summary>
+    private string _thumbprint = string.Empty;
+
     /// <summary>
     /// Thumbprint of the self-signed certificate in the gateway.
     /// </summary>
     [Required]
-    public string Thumbprint { get; init; } = string.Empty;
+    public string Thumbprint
+    {
+        get => _thumbprint;
+        // Allow thumbprint to contain punctuation AB:CD:EF
+        init => _thumbprint = NonHexDigitsRegex().Replace(value, string.Empty);
+    }
 
     /// <summary>
     /// Path to the endpoint on the gateway.
