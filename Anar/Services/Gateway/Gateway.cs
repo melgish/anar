@@ -24,7 +24,6 @@ internal interface IGateway
 /// <param name="logger"></param>
 internal sealed class Gateway : IGateway
 {
-    const string Path = "api/v1/production/inverters";
     private readonly HttpClient _httpClient;
 
     private readonly IOptions<GatewayOptions> _options;
