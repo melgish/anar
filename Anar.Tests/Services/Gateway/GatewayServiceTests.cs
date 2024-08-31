@@ -9,44 +9,26 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 
-using MyGateway = Anar.Services.Gateway.Gateway;
+
 
 namespace Anar.Tests.Services.Gateway;
 
-public class GatewayClientTests
+public class GatewayServiceTests : IHttpClientFactory
 {
-    private readonly FakeLogger<MyGateway> _fakeLogger;
-    private readonly HttpClient _httpClient;
-    private readonly Mock<IOptions<GatewayOptions>> _mockOptions;
+    private readonly FakeLogger<GatewayService> _fakeLogger;
     private readonly Mock<HttpMessageHandler> _mockHandler;
-    private readonly Mock<ILocator> _mockLocator;
-    private readonly GatewayOptions _options;
 
-    public GatewayClientTests()
+    public GatewayServiceTests()
     {
-        _options = new GatewayOptions
-        {
-            Uri = new Uri("http://localhost/"),
-            Token = "token",
-            Thumbprint = "thumbprint",
-        };
-
-        _fakeLogger = new FakeLogger<MyGateway>();
-        _mockOptions = new Mock<IOptions<GatewayOptions>>();
+        _fakeLogger = new FakeLogger<GatewayService>();
         _mockHandler = new Mock<HttpMessageHandler>();
-        _mockLocator = new Mock<ILocator>();
-        _httpClient = new HttpClient(_mockHandler.Object)
+    }
+
+    public HttpClient CreateClient(string name)
+        => new(_mockHandler.Object)
         {
-            BaseAddress = _options.Uri,
+            BaseAddress = new Uri("http://localhost/api/v1/production/inverters"),
         };
-
-        _mockOptions.Setup(o => o.Value).Returns(_options);
-    }
-
-    private MyGateway CreateGatewayClient()
-    {
-        return new MyGateway(_httpClient, _mockOptions.Object, _fakeLogger);
-    }
 
     [Fact]
     public async Task GetInvertersAsync_Success_ReturnsInverters()
@@ -65,7 +47,7 @@ public class GatewayClientTests
             })
             .Verifiable();
 
-        var client = CreateGatewayClient();
+        var client = new GatewayService(this, _fakeLogger);
         var result = await client.GetInvertersAsync();
 
         Assert.Single(result);
@@ -88,10 +70,11 @@ public class GatewayClientTests
             })
             .Verifiable();
 
-        var client = CreateGatewayClient();
+        var client = new GatewayService(this, _fakeLogger);
         var result = await client.GetInvertersAsync();
 
         Assert.Empty(result);
         Assert.Matches("get inverters", _fakeLogger.LatestRecord.Message);
     }
+
 }

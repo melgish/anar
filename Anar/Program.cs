@@ -1,3 +1,5 @@
+using System.Net.Http.Headers;
+using System.Net.Mime;
 using System.Reflection;
 
 using Anar;
@@ -7,6 +9,8 @@ using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
 using Anar.Services.Worker;
+
+using Microsoft.Extensions.Options;
 
 using Serilog;
 
@@ -33,9 +37,23 @@ try
 
     // Gateway
     builder.Services
-        .AddSingleton<ClientHandler>()
-        .AddHttpClient<IGateway, Gateway>()
-        .ConfigurePrimaryHttpMessageHandler<ClientHandler>();
+        .AddSingleton<GatewayThumbprintValidator>()
+        .AddSingleton<IGatewayService, GatewayService>()
+        .AddHttpClient(nameof(GatewayService), (sp, client) => {
+            var options = sp.GetRequiredService<IOptions<GatewayOptions>>().Value;
+            client.BaseAddress = new Uri(options.Uri, options.RequestPath);
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
+            client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
+        })
+        .ConfigurePrimaryHttpMessageHandler(sp => {
+            var validator = sp.GetRequiredService<GatewayThumbprintValidator>();
+            return new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = validator.ValidateThumbprint
+            };
+        });
+
     builder.Services
         .AddOptions<GatewayOptions>()
         .BindConfiguration("Gateway")
@@ -52,7 +70,7 @@ try
 
     // Locator
     builder.Services
-      .AddSingleton<ILocator, Locator>()
+      .AddSingleton<ILocatorService, LocatorService>()
       .AddOptions<LocatorOptions>()
       .Bind(builder.Configuration.GetSection("Locator"))
       .ValidateDataAnnotations()
@@ -60,7 +78,7 @@ try
 
     // Worker
     builder.Services
-        .AddHostedService<Worker>()
+        .AddHostedService<WorkerService>()
         .AddOptions<WorkerOptions>()
         .Bind(builder.Configuration.GetSection("Worker"))
         .ValidateDataAnnotations()

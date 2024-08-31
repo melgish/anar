@@ -6,21 +6,21 @@ using Microsoft.Extensions.Options;
 
 namespace Anar.Services.Worker;
 
-internal sealed class Worker(
+internal sealed class WorkerService(
     WorkerOptions options,
-    ILocator locator,
-    IGateway gatewayClient,
+    ILocatorService locator,
+    IGatewayService gatewayService,
     IInfluxService influxService,
-    ILogger<Worker> logger
+    ILogger<WorkerService> logger
 ) : BackgroundService
 {
-    public Worker(
+    public WorkerService(
         IOptions<WorkerOptions> options,
-        ILocator locator,
-        IGateway gatewayClient,
+        ILocatorService locator,
+        IGatewayService gatewayService,
         IInfluxService influxService,
-        ILogger<Worker> logger
-    ) : this(options.Value, locator, gatewayClient, influxService, logger) { }
+        ILogger<WorkerService> logger
+    ) : this(options.Value, locator, gatewayService, influxService, logger) { }
 
     /// <summary>
     /// Reads data from IQ Gateway and pushes it to InfluxDB
@@ -29,7 +29,7 @@ internal sealed class Worker(
     internal async Task ProcessData(CancellationToken stoppingToken)
     {
         logger.LogDebug("Processing");
-        var inverters = await gatewayClient.GetInvertersAsync(stoppingToken);
+        var inverters = await gatewayService.GetInvertersAsync(stoppingToken);
         if (inverters.Count == 0)
         {
             // Nothing to write.
@@ -48,7 +48,7 @@ internal sealed class Worker(
         // Calculate the total output from all inverters and use latest
         // timestamp from the readings as 'now'
         var wattsNow = Totals.FromReadings(readings);
-        logger.LogInformation("CurrentOutput {WattsNow}", wattsNow);
+        logger.LogInformation(LogEvents.CurrentOutput, "CurrentOutput {WattsNow}", wattsNow);
 
         await influxService.WritePointsAsync(
             readings

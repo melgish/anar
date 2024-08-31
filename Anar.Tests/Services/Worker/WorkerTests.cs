@@ -9,14 +9,14 @@ using Microsoft.Extensions.Logging.Testing;
 
 using Moq;
 
-using MyWorker = Anar.Services.Worker.Worker;
+using MyWorker = Anar.Services.Worker.WorkerService;
 
 namespace Anar.Tests.Services.Worker;
 
 public sealed class WorkerTests
 {
-    readonly Mock<ILocator> locator = new();
-    readonly Mock<IGateway> gatewayClient = new();
+    readonly Mock<ILocatorService> locator = new();
+    readonly Mock<IGatewayService> gatewayClient = new();
     readonly WorkerOptions options = new() { Interval = TimeSpan.FromSeconds(15) };
 
     private void Setup(IList<Inverter> results, IList<Location> locations)

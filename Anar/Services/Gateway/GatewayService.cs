@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Anar.Services.Gateway;
 
-internal interface IGateway
+internal interface IGatewayService
 {
     /// <summary>
     /// Requests inverter data from the Enphase gateway.
@@ -22,42 +22,28 @@ internal interface IGateway
 /// </summary>
 /// <param name="httpClient"></param>
 /// <param name="logger"></param>
-internal sealed class Gateway : IGateway
+internal sealed class GatewayService(
+    IHttpClientFactory httpClientFactory,
+    ILogger<GatewayService> logger
+) : IGatewayService
 {
-    private readonly HttpClient _httpClient;
-
-    private readonly IOptions<GatewayOptions> _options;
-    private readonly ILogger<Gateway> _logger;
-
-    public Gateway(HttpClient httpClient, IOptions<GatewayOptions> options, ILogger<Gateway> logger)
-    {
-        _httpClient = httpClient;
-        _options = options;
-        _logger = logger;
-
-        httpClient.BaseAddress = options.Value.Uri;
-        httpClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", _options.Value.Token);
-    }
-
     /// <summary>
     /// Get inverter data
     /// </summary>
     /// <returns>List of inverter data or empty list</returns>
     public async Task<IList<Inverter>> GetInvertersAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Get inverters");
+        logger.LogDebug(nameof(GetInvertersAsync));
+        using var httpClient = httpClientFactory.CreateClient(nameof(GatewayService));
         try
         {
-            var data = await _httpClient.GetFromJsonAsync<Inverter[]>(
-                _options.Value.RequestPath,
-                cancellationToken
-            );
+
+            var data = await httpClient.GetFromJsonAsync<Inverter[]>(string.Empty, cancellationToken);
             return data?.OrderBy(e => e.SerialNumber).ToList() ?? [];
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get inverters");
+            logger.LogWarning(LogEvents.GetInvertersFailed, ex, "Failed to get inverters");
             return [];
         }
     }

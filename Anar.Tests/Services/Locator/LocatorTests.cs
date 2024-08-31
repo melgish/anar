@@ -7,7 +7,7 @@ namespace Anar.Services.Locator.Tests;
 public class LocatorTests
 {
     private readonly MockFileSystem _fileSystem;
-    private readonly FakeLogger<Locator> _logger;
+    private readonly FakeLogger<LocatorService> _logger;
 
     public LocatorTests()
     {
@@ -31,7 +31,7 @@ public class LocatorTests
     {
         // Arrange
         var options = new LocatorOptions { LayoutFile = @"C:\layout.json" };
-        var locator = new Locator(_fileSystem, options, _logger);
+        var locator = new LocatorService(_fileSystem, options, _logger);
 
         // Assert
         Assert.Equal(TestData.LayoutFileLocations, locator.Locations);
@@ -45,7 +45,7 @@ public class LocatorTests
     {
         // Arrange
         var options = new LocatorOptions { LayoutFile = @"C:\missing.json" };
-        var locator = new Locator(_fileSystem, options, _logger);
+        var locator = new LocatorService(_fileSystem, options, _logger);
 
         // Act
         Assert.Empty(locator.Locations);
@@ -57,7 +57,7 @@ public class LocatorTests
     {
         // Arrange
         var options = new LocatorOptions { LayoutFile = @"C:\corrupt.json" };
-        var locator = new Locator(_fileSystem, options, _logger);
+        var locator = new LocatorService(_fileSystem, options, _logger);
 
         // Assert
         Assert.Empty(locator.Locations);
@@ -69,7 +69,7 @@ public class LocatorTests
     {
         // Arrange
         var options = new LocatorOptions { LayoutFile = "" };
-        var locator = new Locator(_fileSystem, options, _logger);
+        var locator = new LocatorService(_fileSystem, options, _logger);
 
         // Assert
         Assert.Empty(locator.Locations);
