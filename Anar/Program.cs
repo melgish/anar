@@ -1,8 +1,6 @@
-using System.Net.Http.Headers;
 using System.Net.Mime;
 using System.Reflection;
 
-using Anar;
 using Anar.Extensions;
 using Anar.Services;
 using Anar.Services.Gateway;
@@ -41,7 +39,7 @@ try
         .AddSingleton<IGatewayService, GatewayService>()
         .AddHttpClient(nameof(GatewayService), (sp, client) => {
             var options = sp.GetRequiredService<IOptions<GatewayOptions>>().Value;
-            client.BaseAddress = new Uri(options.Uri, options.RequestPath);
+            client.BaseAddress = new(options.Uri, options.RequestPath);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
             client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
