@@ -1,16 +1,31 @@
-using System.Net.Security;
-using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Options;
-using Anar.Services.Notify;
-
 namespace Anar.Services.Gateway;
 
+using Anar.Services.Notify;
+using Microsoft.Extensions.Options;
+using System.Net.Security;
+using System.Security.Cryptography.X509Certificates;
+
+/// <summary>
+/// Validates the thumbprint of the certificate against the configured value.
+/// </summary>
+/// <param name="options"></param>
+/// <param name="logger"></param>
+/// <param name="notifyQueue"></param>
 internal sealed class GatewayThumbprintValidator(
     IOptions<GatewayOptions> options,
     ILogger<GatewayThumbprintValidator> logger,
     INotifyQueue notifyQueue
 )
 {
+    /// <summary>
+    /// Validates that the thumbprint of the certificate matches the
+    /// configured value.
+    /// </summary>
+    /// <param name="message"></param>
+    /// <param name="cert"></param>
+    /// <param name="chain"></param>
+    /// <param name="errors"></param>
+    /// <returns></returns>
     public bool ValidateThumbprint(
         HttpRequestMessage message,
         X509Certificate2? cert,

@@ -7,21 +7,13 @@ using Microsoft.Extensions.Options;
 namespace Anar.Services.Worker;
 
 internal sealed class WorkerService(
-    WorkerOptions options,
+    IOptions<WorkerOptions> options,
     ILocatorService locator,
     IGatewayService gatewayService,
     IInfluxService influxService,
     ILogger<WorkerService> logger
 ) : BackgroundService
 {
-    public WorkerService(
-        IOptions<WorkerOptions> options,
-        ILocatorService locator,
-        IGatewayService gatewayService,
-        IInfluxService influxService,
-        ILogger<WorkerService> logger
-    ) : this(options.Value, locator, gatewayService, influxService, logger) { }
-
     /// <summary>
     /// Reads data from IQ Gateway and pushes it to InfluxDB
     /// </summary>
@@ -67,7 +59,7 @@ internal sealed class WorkerService(
         try
         {
             logger.LogInformation("Starting polling");
-            using var timer = new PeriodicTimer(options.Interval);
+            using var timer = new PeriodicTimer(options.Value.Interval);
             while (!stoppingToken.IsCancellationRequested)
             {
                 await ProcessData(stoppingToken);

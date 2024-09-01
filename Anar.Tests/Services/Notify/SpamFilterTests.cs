@@ -9,15 +9,26 @@ public class SpamFilterTests
     {
         public DateTimeOffset Now { get; set; } = System.GetUtcNow();
         public override DateTimeOffset GetUtcNow() => Now;
+
+        public void SetTwoDaysAgo()
+            => Now = System.GetUtcNow().Subtract(TimeSpan.FromDays(2));
+
+        public void SetNow()
+            => Now = System.GetUtcNow();
+    }
+    private readonly TestTimeProvider _timeProvider = new();
+    private readonly IOptions<NotifyOptions> _options = Options.Create<NotifyOptions>(new());
+
+    private SpamFilter Setup()
+    {
+        return new SpamFilter(_timeProvider, _options);
     }
 
     [Fact]
     public void IsOkToSend_ReturnsTrue_WhenAlertIsNotInDictionary()
     {
         // Arrange
-        var timeProvider = new TestTimeProvider();
-        var options = Options.Create(new NotifyOptions());
-        var spamFilter = new SpamFilter(timeProvider, options);
+        var spamFilter = Setup();
 
         // Act
         var result = spamFilter.IsOkToSend(new SimpleAlert("test"));
@@ -30,9 +41,7 @@ public class SpamFilterTests
     public void IsOkToSend_ReturnsFalse_WhenAlertIsInDictionary()
     {
         // Arrange
-        var timeProvider = new TestTimeProvider();
-        var options = Options.Create(new NotifyOptions());
-        var spamFilter = new SpamFilter(timeProvider, options);
+        var spamFilter = Setup();
 
         // Act
         spamFilter.IsOkToSend(new SimpleAlert("test"));
@@ -46,14 +55,12 @@ public class SpamFilterTests
     public void IsOkToSend_ReturnsTrue_WhenAlertIsInDictionaryButExpired()
     {
         // Arrange
-        var timeProvider = new TestTimeProvider();
-        var options = Options.Create(new NotifyOptions());
-        var spamFilter = new SpamFilter(timeProvider, options);
+        var spamFilter = Setup();
+        _timeProvider.SetTwoDaysAgo();
+        spamFilter.IsOkToSend(new SimpleAlert("test"));
+        _timeProvider.SetNow();
 
         // Act
-        timeProvider.Now = TimeProvider.System.GetUtcNow().Subtract(TimeSpan.FromDays(2));
-        spamFilter.IsOkToSend(new SimpleAlert("test"));
-        timeProvider.Now = TimeProvider.System.GetUtcNow();
         var result = spamFilter.IsOkToSend(new SimpleAlert("test"));
 
         // Assert
@@ -64,18 +71,15 @@ public class SpamFilterTests
     public void FlushExpired_RemovesExpiredAlerts()
     {
         // Arrange
-        var timeProvider = new TestTimeProvider();
-        var options = Options.Create(new NotifyOptions());
-        var spamFilter = new SpamFilter(timeProvider, options);
-
-        // Act
-        timeProvider.Now = TimeProvider.System.GetUtcNow().Subtract(TimeSpan.FromDays(2));
+        var spamFilter = Setup();
+        _timeProvider.SetTwoDaysAgo();
         spamFilter.IsOkToSend(new SimpleAlert("test"));
         spamFilter.IsOkToSend(new ThumbprintAlert("expected", "actual"));
         spamFilter.IsOkToSend(new Alert());
-        timeProvider.Now = TimeProvider.System.GetUtcNow();
-        spamFilter.IsOkToSend(new Alert());
+        _timeProvider.SetNow();
 
+        // Act
+        spamFilter.IsOkToSend(new Alert());
         spamFilter.FlushExpired();
 
         // Assert

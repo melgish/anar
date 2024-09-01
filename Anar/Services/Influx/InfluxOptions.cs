@@ -1,7 +1,10 @@
+namespace Anar.Services.Influx;
+
 using System.ComponentModel.DataAnnotations;
 
-namespace Anar.Services;
-
+/// <summary>
+/// Options for connection to Influx DB.
+/// </summary>
 internal sealed class InfluxOptions
 {
     /// <summary>

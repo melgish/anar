@@ -11,9 +11,13 @@ internal static class LogEvents
     public static readonly EventId NotifyExecuteError = 2005;
 
     // WARNINGS 3000-3999
-    public static readonly EventId GetInvertersFailed = 3001;
+    public static readonly EventId GetInvertersAuthorizationError = 3001;
+    public static readonly EventId GetInvertersThumbprintError = 3002;
+    public static readonly EventId GetInvertersError = 3003;
 
-    public static readonly EventId NotifySendError = 3002;
+
+    public static readonly EventId NotifySendError = 3005;
+    public static readonly EventId InfluxDbWriteError = 3006;
 
     // INFOS 4000-4999
     public static readonly EventId CurrentOutput = 4001;
@@ -22,5 +26,6 @@ internal static class LogEvents
     public static readonly EventId NotifySending = 4004;
 
     // DEBUGS
-
+    public static readonly EventId GetInverters = 5001;
+    public static readonly EventId WrotePoints = 5002;
 }

@@ -3,7 +3,7 @@ namespace Anar.Services.Notify;
 /// <summary>
 /// A no-op implementation of <see cref="INotifyQueue"/> that is always empty.
 /// </summary>
-internal class NoOpNotifyQueue : INotifyQueue
+internal sealed class NoOpNotifyQueue : INotifyQueue
 {
     public void Enqueue(Alert message) { }
 
@@ -13,4 +13,3 @@ internal class NoOpNotifyQueue : INotifyQueue
         return false;
     }
 }
-

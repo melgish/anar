@@ -1,9 +1,7 @@
-using InfluxDB.Client;
-using InfluxDB.Client.Writes;
-
-using Microsoft.Extensions.Options;
-
 namespace Anar.Services.Influx;
+
+using InfluxDB.Client.Writes;
+using Microsoft.Extensions.Options;
 
 /// <summary>
 /// Accessor to write data to influxdb in batches of points.
@@ -22,6 +20,7 @@ internal interface IInfluxService
 /// Implements IInfluxService
 /// </summary>
 internal sealed class InfluxService(
+    IInfluxDbClientFactory clientFactory,
     IOptions<InfluxOptions> options,
     ILogger<InfluxService> logger
 ) : IInfluxService
@@ -37,15 +36,15 @@ internal sealed class InfluxService(
         {
             var opts = options.Value;
 
-            using var client = new InfluxDBClient(opts.Uri.ToString(), opts.Token);
+            using var client = clientFactory.CreateClient(opts.Uri, opts.Token);
             var api = client.GetWriteApiAsync();
 
             await api.WritePointsAsync(points, opts.Bucket, opts.Organization, cancellationToken);
-            logger.LogDebug("Wrote {Count} points to {Bucket}", points.Count, opts.Bucket);
+            logger.LogDebug(LogEvents.WrotePoints, "Wrote {Count} points to {Bucket}", points.Count, opts.Bucket);
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to write points");
+            logger.LogWarning(LogEvents.InfluxDbWriteError, ex, "Failed to write points");
         }
     }
 }

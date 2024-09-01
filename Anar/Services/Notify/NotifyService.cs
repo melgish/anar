@@ -1,11 +1,17 @@
 
-using System.Diagnostics;
-using System.Text;
-
-using Microsoft.Extensions.Options;
-
 namespace Anar.Services.Notify;
 
+using Microsoft.Extensions.Options;
+using System.Text;
+
+/// <summary>
+/// Service to send notifications to NTFY service.
+/// </summary>
+/// <param name="httpClientFactory"></param>
+/// <param name="queue"></param>
+/// <param name="options"></param>
+/// <param name="spamFilter"></param>
+/// <param name="logger"></param>
 internal sealed class NotifyService(
     IHttpClientFactory httpClientFactory,
     INotifyQueue queue,
@@ -14,18 +20,19 @@ internal sealed class NotifyService(
     ILogger<NotifyService> logger
 ) : BackgroundService
 {
-    private async Task SendNotificationAsync(Alert alert, CancellationToken stoppingToken)
+    /// <summary>
+    /// Send a single notification to the NTFY service.  Exposed for testing.
+    /// </summary>
+    /// <param name="alert">Alert to publish</param>
+    /// <param name="stoppingToken"></param>
+    /// <returns></returns>
+    internal async Task SendNotificationAsync(Alert alert, CancellationToken stoppingToken)
     {
-        var message = alert switch
-        {
-            SimpleAlert simple => simple.ToString(),
-            ThumbprintAlert thumbprint => thumbprint.ToString(),
-            AuthenticationAlert auth => auth.ToString(),
-            _ => alert.ToString()
-        };
+        // For now just using ToString() as the message body.
+        var message = alert.ToString();
         var content = new StringContent(message, Encoding.UTF8, "text/plain");
         using var httpClient = httpClientFactory.CreateClient(nameof(NotifyService));
-        var rs = await httpClient.PostAsync(string.Empty, content);
+        var rs = await httpClient.PostAsync(string.Empty, content, stoppingToken);
         if (!rs.IsSuccessStatusCode)
         {
             logger.LogWarning(LogEvents.NotifySendError, "Failed to send notification: {StatusCode}", rs.StatusCode);
@@ -33,11 +40,11 @@ internal sealed class NotifyService(
     }
 
     /// <summary>
-    /// Process all of the notifications in the queue.
+    /// Process all of the notifications in the queue. Exposed for testing.
     /// </summary>
     /// <param name="stoppingToken"></param>
     /// <returns></returns>
-    private async Task ProcessNotificationsAsync(CancellationToken stoppingToken)
+    internal async Task ProcessNotificationsAsync(CancellationToken stoppingToken)
     {
         spamFilter.FlushExpired();
         while (!stoppingToken.IsCancellationRequested && queue.TryDequeue(out Alert? alert))
@@ -63,7 +70,6 @@ internal sealed class NotifyService(
             using var timer = new PeriodicTimer(options.Value.PollingInterval);
             while (!stoppingToken.IsCancellationRequested)
             {
-
                 await ProcessNotificationsAsync(stoppingToken);
                 await timer.WaitForNextTickAsync(stoppingToken);
             }

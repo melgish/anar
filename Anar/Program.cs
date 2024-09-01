@@ -1,7 +1,4 @@
 
-using System.Net.Mime;
-using System.Reflection;
-
 using Anar.Extensions;
 using Anar.Services;
 using Anar.Services.Gateway;
@@ -9,11 +6,11 @@ using Anar.Services.Influx;
 using Anar.Services.Locator;
 using Anar.Services.Notify;
 using Anar.Services.Worker;
-
-
 using Microsoft.Extensions.Options;
-
 using Serilog;
+using System.IO.Abstractions;
+using System.Net.Mime;
+using System.Reflection;
 
 // Use static log during startup to log any configuration warnings or errors.
 Log.Logger = new LoggerConfiguration()
@@ -52,7 +49,8 @@ try
         builder.Services
             .AddHostedService<NotifyService>()
             .AddSingleton<ISpamFilter, SpamFilter>()
-            .AddHttpClient(nameof(NotifyService), (sp, client) => {
+            .AddHttpClient(nameof(NotifyService), (sp, client) =>
+            {
                 var options = sp.GetRequiredService<IOptions<NotifyOptions>>().Value;
                 client.BaseAddress = options.Uri;
                 client.DefaultRequestHeaders.Accept.Clear();
@@ -71,14 +69,16 @@ try
     builder.Services
         .AddSingleton<GatewayThumbprintValidator>()
         .AddSingleton<IGatewayService, GatewayService>()
-        .AddHttpClient(nameof(GatewayService), (sp, client) => {
+        .AddHttpClient(nameof(GatewayService), (sp, client) =>
+        {
             var options = sp.GetRequiredService<IOptions<GatewayOptions>>().Value;
             client.BaseAddress = new(options.Uri, options.RequestPath);
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
             client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
         })
-        .ConfigurePrimaryHttpMessageHandler(sp => {
+        .ConfigurePrimaryHttpMessageHandler(sp =>
+        {
             var validator = sp.GetRequiredService<GatewayThumbprintValidator>();
             return new HttpClientHandler
             {
@@ -94,6 +94,7 @@ try
 
     // Influx
     builder.Services
+        .AddSingleton<IInfluxDbClientFactory, InfluxDbClientFactory>()
         .AddSingleton<IInfluxService, InfluxService>()
         .AddOptions<InfluxOptions>()
         .BindConfiguration("Influx")
@@ -103,6 +104,7 @@ try
     // Locator
     builder.Services
       .AddSingleton<ILocatorService, LocatorService>()
+      .AddSingleton<IFileSystem, FileSystem>()
       .AddOptions<LocatorOptions>()
       .BindConfiguration("Locator")
       .ValidateDataAnnotations()

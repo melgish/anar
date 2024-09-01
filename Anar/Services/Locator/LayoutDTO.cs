@@ -1,6 +1,6 @@
-using System.Text.Json.Serialization;
-
 namespace Anar.Services.Locator;
+
+using System.Text.Json.Serialization;
 
 // An abridged version  of the data from array_layout_x.json downloaded from
 // enlighten site is:
@@ -17,16 +17,13 @@ namespace Anar.Services.Locator;
 //  }
 // The classes below provide the means to parse the JSON data into C# objects.
 
-internal sealed class ModuleInverter
+internal sealed class LayoutDTO
 {
-    [JsonPropertyName("serial_num")]
-    public string SerialNumber { get; init; } = string.Empty;
-}
+    [JsonPropertyName("arrays")]
+    public LayoutArray[] Arrays { get; init; } = [];
 
-internal sealed class ArrayModule
-{
-    [JsonPropertyName("inverter")]
-    public ModuleInverter Inverter { get; init; } = new();
+    public IEnumerable<Location> ToLocations()
+        => Arrays.SelectMany(array => array.ToLocations());
 }
 
 internal sealed class LayoutArray
@@ -48,11 +45,14 @@ internal sealed class LayoutArray
         ));
 }
 
-internal sealed class LayoutDTO
+internal sealed class ArrayModule
 {
-    [JsonPropertyName("arrays")]
-    public LayoutArray[] Arrays { get; init; } = [];
+    [JsonPropertyName("inverter")]
+    public ModuleInverter Inverter { get; init; } = new();
+}
 
-    public IEnumerable<Location> ToLocations()
-        => Arrays.SelectMany(array => array.ToLocations());
+internal sealed class ModuleInverter
+{
+    [JsonPropertyName("serial_num")]
+    public string SerialNumber { get; init; } = string.Empty;
 }

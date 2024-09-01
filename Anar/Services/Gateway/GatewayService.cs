@@ -1,12 +1,14 @@
 // spell-checker: words Enphase
+namespace Anar.Services.Gateway;
+
+using Anar.Services.Notify;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Authentication;
-using Anar.Services.Notify;
 
-
-namespace Anar.Services.Gateway;
-
+/// <summary>
+/// Interface for making request to the Enphase gateway service.
+/// </summary>
 internal interface IGatewayService
 {
     /// <summary>
@@ -45,7 +47,7 @@ internal sealed class GatewayService(
     /// <returns>List of inverter data or empty list</returns>
     public async Task<IList<Inverter>> GetInvertersAsync(CancellationToken cancellationToken = default)
     {
-        logger.LogDebug(nameof(GetInvertersAsync));
+        logger.LogDebug(LogEvents.GetInverters, nameof(GetInvertersAsync));
         using var httpClient = httpClientFactory.CreateClient(nameof(GatewayService));
         try
         {
@@ -56,18 +58,18 @@ internal sealed class GatewayService(
         {
             if (Is401UnauthorizedError(ex))
             {
-                logger.LogWarning(LogEvents.GetInvertersFailed, "Authorization Failure");
+                logger.LogWarning(LogEvents.GetInvertersAuthorizationError, "Authorization Failure");
                 notifyQueue.Enqueue(new AuthenticationAlert("Unauthorized"));
             }
             else if (IsSSLThumbprintError(ex))
             {
                 // Thumbprint validator will already have enqueued the alert
                 // with the additional information not available here.
-                logger.LogWarning(LogEvents.GetInvertersFailed, "SSL Certificate Error");
+                logger.LogWarning(LogEvents.GetInvertersThumbprintError, "SSL Certificate Error");
             }
             else
             {
-                logger.LogWarning(LogEvents.GetInvertersFailed, ex, "Failed to get inverters");
+                logger.LogWarning(LogEvents.GetInvertersError, ex, "Failed to get inverters");
             }
             return [];
         }

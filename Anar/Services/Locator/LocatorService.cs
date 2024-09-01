@@ -1,7 +1,6 @@
+using Microsoft.Extensions.Options;
 using System.IO.Abstractions;
 using System.Text.Json;
-
-using Microsoft.Extensions.Options;
 
 namespace Anar.Services.Locator;
 
@@ -16,11 +15,12 @@ internal interface ILocatorService
 }
 
 /// <summary>
-/// Implementation of ILocator that reads the array layout from a local file.
+/// Implementation of ILocatorService that reads the array layout from a local
+/// file.
 /// </summary>
 internal sealed class LocatorService(
     IFileSystem fileSystem,
-    LocatorOptions options,
+    IOptions<LocatorOptions> options,
     ILogger<LocatorService> logger
 ) : ILocatorService
 {
@@ -30,15 +30,7 @@ internal sealed class LocatorService(
     private IList<Location>? _locations;
 
     public IList<Location> Locations =>
-        _locations ??= LoadFromFile(options.LayoutFile);
-
-    /// <summary>
-    /// Reads the layout file and creates a dictionary of inverter locations.
-    /// </summary>
-    /// <param name="options">Configuration options accessor.</param>
-    /// <param name="logger">Logger instance.e</param>
-    public LocatorService(IOptions<LocatorOptions> options, ILogger<LocatorService> logger)
-        : this(new FileSystem(), options.Value, logger) { }
+        _locations ??= LoadFromFile(options.Value.LayoutFile);
 
     /// <summary>
     /// Reads the layout file and creates a dictionary of inverter locations.

@@ -1,8 +1,7 @@
 namespace Anar.Services.Notify;
 
-using System.Collections.Concurrent;
-
 using Microsoft.Extensions.Options;
+using System.Collections.Concurrent;
 
 internal interface ISpamFilter
 {
@@ -33,12 +32,12 @@ internal sealed class SpamFilter(
 ) : ISpamFilter
 {
     private readonly ConcurrentDictionary<Alert, long> _alerts = new();
-    private readonly long _spamTicks = options.Value.SpamInterval.Ticks;
+    private readonly long _spamInterval = options.Value.SpamInterval.Ticks;
 
     /// <summary>
     /// Gets current size of the dictionary.  Exposed for testing.
     /// </summary>
-    public int Count => _alerts.Count;
+    internal int Count => _alerts.Count;
 
     /// <summary>
     /// Remove all expired entries.
@@ -47,10 +46,10 @@ internal sealed class SpamFilter(
     /// </summary>
     public void FlushExpired()
     {
-        var minCreated = timeProvider.GetUtcNow().Ticks - _spamTicks;
+        var minCreated = timeProvider.GetUtcNow().Ticks - _spamInterval;
         foreach (var (key, created) in _alerts)
         {
-            if (created < minCreated)
+            if (created <= minCreated)
             {
                 _alerts.TryRemove(key, out _);
             }
@@ -65,17 +64,14 @@ internal sealed class SpamFilter(
     /// <returns>True if alert can be sent without being an nuisance</returns>
     public bool IsOkToSend(Alert alert)
     {
-        var created = timeProvider.GetUtcNow().Ticks;
-        var minCreated = created - _spamTicks;
-        if (_alerts.TryGetValue(alert, out var lastSent))
+        var now = timeProvider.GetUtcNow().Ticks;
+        var minCreated = now - _spamInterval;
+        if (_alerts.TryGetValue(alert, out var created) && minCreated < created)
         {
-            if (lastSent >= minCreated)
-            {
-                return false;
-            }
+            return false;
         }
 
-        _alerts[alert] = created;
+        _alerts[alert] = now;
         return true;
     }
 }
