@@ -1,13 +1,14 @@
 using System.Net.Security;
 using System.Security.Cryptography.X509Certificates;
-
 using Microsoft.Extensions.Options;
+using Anar.Services.Notify;
 
 namespace Anar.Services.Gateway;
 
 internal sealed class GatewayThumbprintValidator(
     IOptions<GatewayOptions> options,
-    ILogger<GatewayThumbprintValidator> logger
+    ILogger<GatewayThumbprintValidator> logger,
+    INotifyQueue notifyQueue
 )
 {
     public bool ValidateThumbprint(
@@ -43,6 +44,8 @@ internal sealed class GatewayThumbprintValidator(
             options.Value.Thumbprint,
             cert.Thumbprint
         );
+
+        notifyQueue.Enqueue(new ThumbprintAlert(options.Value.Thumbprint, cert.Thumbprint));
 
         return false;
     }

@@ -1,3 +1,4 @@
+
 using System.Net.Mime;
 using System.Reflection;
 
@@ -6,7 +7,9 @@ using Anar.Services;
 using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
+using Anar.Services.Notify;
 using Anar.Services.Worker;
+
 
 using Microsoft.Extensions.Options;
 
@@ -32,6 +35,37 @@ try
       .ReadFrom.Configuration(builder.Configuration)
       .ReadFrom.Services(services)
     );
+
+    builder.Services.AddSingleton(TimeProvider.System);
+
+    // Notify
+    // Service is optional, if not configured, use a no-op implementation.
+    if (builder.Configuration.GetSection("Notify").Exists())
+    {
+        builder.Services
+            .AddSingleton<INotifyQueue, NotifyQueue>()
+            .AddOptions<NotifyOptions>()
+            .BindConfiguration("Notify")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services
+            .AddHostedService<NotifyService>()
+            .AddSingleton<ISpamFilter, SpamFilter>()
+            .AddHttpClient(nameof(NotifyService), (sp, client) => {
+                var options = sp.GetRequiredService<IOptions<NotifyOptions>>().Value;
+                client.BaseAddress = options.Uri;
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
+                client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
+            });
+    }
+    else
+    {
+        // When disabled just add the empty queue for publishers to use.
+        builder.Services
+            .AddSingleton<INotifyQueue, NoOpNotifyQueue>();
+    }
 
     // Gateway
     builder.Services
@@ -62,7 +96,7 @@ try
     builder.Services
         .AddSingleton<IInfluxService, InfluxService>()
         .AddOptions<InfluxOptions>()
-        .Bind(builder.Configuration.GetSection("Influx"))
+        .BindConfiguration("Influx")
         .ValidateDataAnnotations()
         .ValidateOnStart();
 
@@ -70,7 +104,7 @@ try
     builder.Services
       .AddSingleton<ILocatorService, LocatorService>()
       .AddOptions<LocatorOptions>()
-      .Bind(builder.Configuration.GetSection("Locator"))
+      .BindConfiguration("Locator")
       .ValidateDataAnnotations()
       .ValidateOnStart();
 
@@ -78,7 +112,7 @@ try
     builder.Services
         .AddHostedService<WorkerService>()
         .AddOptions<WorkerOptions>()
-        .Bind(builder.Configuration.GetSection("Worker"))
+        .BindConfiguration("Worker")
         .ValidateDataAnnotations()
         .ValidateOnStart();
 

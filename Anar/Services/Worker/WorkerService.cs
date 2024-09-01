@@ -80,7 +80,7 @@ internal sealed class WorkerService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Worker error");
+            logger.LogError(LogEvents.WorkerExecuteError, ex, "Worker error");
         }
     }
 }
