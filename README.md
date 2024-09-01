@@ -25,55 +25,84 @@ load from a docker secret.
 
 ## Gateway
 This section controls settings for communicating with an Enphase IQ gateway.
-Enphase does not make direct access easy.
-
-### Gateway : Thumbprint (string)
-This is the SHA-1 value of the self-signed certificate of your Enphase gateway.
-You can capture this by reviewing browser security settings.  Value is a stream
-of hex digits. Colons or Dashes between characters (AB:CD:EF) will be ignored.
-
-### Gateway : Token (string)
-This is the security token the system should use when accessing your gateway.
+Enphase does not make direct access easy.  See the following
 [This Technical Brief](https://enphase.com/download/accessing-iq-gateway-local-apis-or-local-ui-token-based-authentication)
-describes one way to get one.
+for information on how to generate your token.
 
-### Gateway : Uri (string)
-This is the web address of your gateway. Usually it is going to be a local IP
-like `https://192.168.1.10`, but your setup may be different than mine.
+```json
+"Gateway": {
+  // Should not need to be changed. Path for gateway request.
+  "RequestPath": "api/v1/production/inverters",
+  // The SHA-1 thumbprint of the enphase gateway self signed certificate.
+  "Thumbprint": "<THUMBPRINT>",
+  // The authentication token enphase requires for gateway requests.
+  "Token": "<TOKEN>",
+  // The IP address or host name of the enphase gateway
+  "Uri": "https://192.168.1.10"
+}
+```
 
 ## Influx
 These options control how the app will connect to an InfluxDB database.
 
-### Influx : Bucket (string)
-This is the data bucket to insert data to.
-
-### Influx : Organization (string)
-This is the organization associated with the token.
-
-### Influx : Token (string)
-This is the InfluxDB authentication token.
-
-### Influx : Uri
-This is the web address of your database. For example `http://influxdb:8086`.
-Your setup may be different than mine.
+```json
+"Influx": {
+  // The InfluxDB bucket to write data to.
+  "Bucket": "testing",
+  // The InfluxDB organization for the token owner.
+  "Organization": "home",
+  // The InfluxDB token to use for authentication.
+  "Token": "<TOKEN>",
+  // The InfluxDB URI.
+  "Uri": "http://influxdb:8086"
+}
+```
 
 ## Locator
-These options control additional data that can be joined with inverter data
-from the gateway.
+This setting is optional, and allows you to provide additional data that can
+be joined with inverter data from the gateway.
 
-### Locator : LayoutFile (string)
-This optional setting provides an alternative to Layout above. Instead of
-embedding the location array directly, layout information can be imported from
-`array_layout_x.json` which is one of the files downloaded in the background
-when you view your system on the
-[Enlighten Website](https://enlighten.enphaseenergy.com/). You'll need to use
-browser developer tools to capture this file.
+```json
+"Locator": {
+  // Optional path to file containing location data for system.
+  // Instead of embedding location information directly, view your system on
+  // the [Enlighten Website](https://enlighten.enphaseenergy.com/)
+  // Open browser tools and then go to the Arrays tab.  You will want to find
+  // and copy teh array_layout_x.json file.  Save that and put the path
+  // here.
+  "LayoutFile": ""
+}
+```
 
+## Notify
+This section is optional. If present, any authentication or certificate errors
+will be published to the supplied NTFY host and topic. NOTE: Remove the entire
+section if you do not want notifications.
+
+```json
+// This section is optional. Remove the entire section if you do not want
+// notifications.
+"Notify": {
+  // The full URL and path to your NTFY server and topic.
+  "Uri": "https://ntfy.sh/your-topic-name",
+  // The token to use for authenticating you NTFY request.
+  // It must have write access to the topic.
+  "Token": "<TOKEN>",
+  // How often to check for and send notifications. Default is 5 minutes
+  "PollInterval": "0.00:05:00",
+  // How much time before repeating a notification. Default is 1 day.
+  "SpamInterval": "1.00:00:00"
+}
+
+```
 ## Worker
 These settings control how often the worker will capture and upload data.
-
-### Worker : Interval (TimeSpan) default = 0.00:05:00
-This setting controls how often to poll the data from the gateway.
+```json
+"Worker": {
+  // How often to poll the enphase gateway for data. Default is 5 minutes.
+  "Interval": "0.00:05:00"
+}
+```
 
 # Building
 Most of the ways you can build .NET apps will work. In addition a compose.yaml
@@ -81,14 +110,22 @@ file in the folder can be done to build a docker container
 
 ## Via Command line
 ```shell
-# make sure appsettings.json has been properly filled out.
 dotnet build
+dotnet test
+
+# Test with coverage
+dotnet test --verbosity normal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=../.coverage/
+
+# Generate a coverage report
+dotnet reportgenerator -reports:.coverage/coverage.opencover.xml -targetdir:.coverage/report
+
+# Run the project - Make sure appsettings.json has been properly filled out.
 dotnet run --project Anar
 ```
 
 ## Via Docker
 ```shell
-# make sure all your settings have been configured.
+# Make sure all your settings have been configured.
 docker compose build
 docker compose up -d
 ```

@@ -6,6 +6,11 @@
     "Enphase",
     "Serilog",
     "reportgenerator",
-    "globaltool"
-  ]
+    "globaltool",
+    "NTFY",
+  ],
+  "files.associations": {
+    "appsettings.json": "jsonc",
+    "appsetttings.*.json": "jsonc"
+  }
 }
