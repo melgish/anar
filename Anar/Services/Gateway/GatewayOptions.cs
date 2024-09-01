@@ -1,9 +1,9 @@
 // spell-checker: words Enphase
+namespace Anar.Services.Gateway;
+
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
-
-namespace Anar.Services.Gateway;
 
 internal sealed partial class GatewayOptions
 {

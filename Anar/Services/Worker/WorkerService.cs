@@ -6,22 +6,14 @@ using Microsoft.Extensions.Options;
 
 namespace Anar.Services.Worker;
 
-internal sealed class Worker(
-    WorkerOptions options,
-    ILocator locator,
-    IGateway gatewayClient,
+internal sealed class WorkerService(
+    IOptions<WorkerOptions> options,
+    ILocatorService locator,
+    IGatewayService gatewayService,
     IInfluxService influxService,
-    ILogger<Worker> logger
+    ILogger<WorkerService> logger
 ) : BackgroundService
 {
-    public Worker(
-        IOptions<WorkerOptions> options,
-        ILocator locator,
-        IGateway gatewayClient,
-        IInfluxService influxService,
-        ILogger<Worker> logger
-    ) : this(options.Value, locator, gatewayClient, influxService, logger) { }
-
     /// <summary>
     /// Reads data from IQ Gateway and pushes it to InfluxDB
     /// </summary>
@@ -29,7 +21,7 @@ internal sealed class Worker(
     internal async Task ProcessData(CancellationToken stoppingToken)
     {
         logger.LogDebug("Processing");
-        var inverters = await gatewayClient.GetInvertersAsync(stoppingToken);
+        var inverters = await gatewayService.GetInvertersAsync(stoppingToken);
         if (inverters.Count == 0)
         {
             // Nothing to write.
@@ -48,7 +40,7 @@ internal sealed class Worker(
         // Calculate the total output from all inverters and use latest
         // timestamp from the readings as 'now'
         var wattsNow = Totals.FromReadings(readings);
-        logger.LogInformation("CurrentOutput {WattsNow}", wattsNow);
+        logger.LogInformation(LogEvents.CurrentOutput, "CurrentOutput {WattsNow}", wattsNow);
 
         await influxService.WritePointsAsync(
             readings
@@ -67,7 +59,7 @@ internal sealed class Worker(
         try
         {
             logger.LogInformation("Starting polling");
-            using var timer = new PeriodicTimer(options.Interval);
+            using var timer = new PeriodicTimer(options.Value.Interval);
             while (!stoppingToken.IsCancellationRequested)
             {
                 await ProcessData(stoppingToken);
@@ -80,7 +72,7 @@ internal sealed class Worker(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Worker error");
+            logger.LogError(LogEvents.WorkerExecuteError, ex, "Worker error");
         }
     }
 }

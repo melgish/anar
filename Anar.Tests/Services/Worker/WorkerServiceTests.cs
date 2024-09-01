@@ -6,17 +6,17 @@ using Anar.Services.Worker;
 using InfluxDB.Client.Writes;
 
 using Microsoft.Extensions.Logging.Testing;
-
+using Microsoft.Extensions.Options;
 using Moq;
 
-using MyWorker = Anar.Services.Worker.Worker;
+using MyWorker = Anar.Services.Worker.WorkerService;
 
 namespace Anar.Tests.Services.Worker;
 
-public sealed class WorkerTests
+public sealed class WorkerServiceTests
 {
-    readonly Mock<ILocator> locator = new();
-    readonly Mock<IGateway> gatewayClient = new();
+    readonly Mock<ILocatorService> locator = new();
+    readonly Mock<IGatewayService> gatewayClient = new();
     readonly WorkerOptions options = new() { Interval = TimeSpan.FromSeconds(15) };
 
     private void Setup(IList<Inverter> results, IList<Location> locations)
@@ -37,7 +37,7 @@ public sealed class WorkerTests
         var logger = new FakeLogger<MyWorker>();
 
         var worker = new MyWorker(
-            options,
+            Options.Create(options),
             locator.Object,
             gatewayClient.Object,
             influxService.Object,
@@ -66,7 +66,7 @@ public sealed class WorkerTests
         var logger = new FakeLogger<MyWorker>();
 
         var worker = new MyWorker(
-            options,
+            Options.Create(options),
             locator.Object,
             gatewayClient.Object,
             influxService.Object,

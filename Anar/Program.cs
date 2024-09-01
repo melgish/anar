@@ -1,14 +1,16 @@
-using System.Reflection;
 
-using Anar;
 using Anar.Extensions;
 using Anar.Services;
 using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
+using Anar.Services.Notify;
 using Anar.Services.Worker;
-
+using Microsoft.Extensions.Options;
 using Serilog;
+using System.IO.Abstractions;
+using System.Net.Mime;
+using System.Reflection;
 
 // Use static log during startup to log any configuration warnings or errors.
 Log.Logger = new LoggerConfiguration()
@@ -31,11 +33,59 @@ try
       .ReadFrom.Services(services)
     );
 
+    builder.Services.AddSingleton(TimeProvider.System);
+
+    // Notify
+    // Service is optional, if not configured, use a no-op implementation.
+    if (builder.Configuration.GetSection("Notify").Exists())
+    {
+        builder.Services
+            .AddSingleton<INotifyQueue, NotifyQueue>()
+            .AddOptions<NotifyOptions>()
+            .BindConfiguration("Notify")
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        builder.Services
+            .AddHostedService<NotifyService>()
+            .AddSingleton<ISpamFilter, SpamFilter>()
+            .AddHttpClient(nameof(NotifyService), (sp, client) =>
+            {
+                var options = sp.GetRequiredService<IOptions<NotifyOptions>>().Value;
+                client.BaseAddress = options.Uri;
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
+                client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
+            });
+    }
+    else
+    {
+        // When disabled just add the empty queue for publishers to use.
+        builder.Services
+            .AddSingleton<INotifyQueue, NoOpNotifyQueue>();
+    }
+
     // Gateway
     builder.Services
-        .AddSingleton<ClientHandler>()
-        .AddHttpClient<IGateway, Gateway>()
-        .ConfigurePrimaryHttpMessageHandler<ClientHandler>();
+        .AddSingleton<GatewayThumbprintValidator>()
+        .AddSingleton<IGatewayService, GatewayService>()
+        .AddHttpClient(nameof(GatewayService), (sp, client) =>
+        {
+            var options = sp.GetRequiredService<IOptions<GatewayOptions>>().Value;
+            client.BaseAddress = new(options.Uri, options.RequestPath);
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
+            client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
+        })
+        .ConfigurePrimaryHttpMessageHandler(sp =>
+        {
+            var validator = sp.GetRequiredService<GatewayThumbprintValidator>();
+            return new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = validator.ValidateThumbprint
+            };
+        });
+
     builder.Services
         .AddOptions<GatewayOptions>()
         .BindConfiguration("Gateway")
@@ -44,25 +94,27 @@ try
 
     // Influx
     builder.Services
+        .AddSingleton<IInfluxDbClientFactory, InfluxDbClientFactory>()
         .AddSingleton<IInfluxService, InfluxService>()
         .AddOptions<InfluxOptions>()
-        .Bind(builder.Configuration.GetSection("Influx"))
+        .BindConfiguration("Influx")
         .ValidateDataAnnotations()
         .ValidateOnStart();
 
     // Locator
     builder.Services
-      .AddSingleton<ILocator, Locator>()
+      .AddSingleton<ILocatorService, LocatorService>()
+      .AddSingleton<IFileSystem, FileSystem>()
       .AddOptions<LocatorOptions>()
-      .Bind(builder.Configuration.GetSection("Locator"))
+      .BindConfiguration("Locator")
       .ValidateDataAnnotations()
       .ValidateOnStart();
 
     // Worker
     builder.Services
-        .AddHostedService<Worker>()
+        .AddHostedService<WorkerService>()
         .AddOptions<WorkerOptions>()
-        .Bind(builder.Configuration.GetSection("Worker"))
+        .BindConfiguration("Worker")
         .ValidateDataAnnotations()
         .ValidateOnStart();
 

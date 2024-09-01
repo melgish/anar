@@ -1,11 +1,10 @@
+using Microsoft.Extensions.Options;
 using System.IO.Abstractions;
 using System.Text.Json;
 
-using Microsoft.Extensions.Options;
-
 namespace Anar.Services.Locator;
 
-internal interface ILocator
+internal interface ILocatorService
 {
     /// <summary>
     /// Gets list of known inverter locations.
@@ -16,13 +15,14 @@ internal interface ILocator
 }
 
 /// <summary>
-/// Implementation of ILocator that reads the array layout from a local file.
+/// Implementation of ILocatorService that reads the array layout from a local
+/// file.
 /// </summary>
-internal sealed class Locator(
+internal sealed class LocatorService(
     IFileSystem fileSystem,
-    LocatorOptions options,
-    ILogger<Locator> logger
-) : ILocator
+    IOptions<LocatorOptions> options,
+    ILogger<LocatorService> logger
+) : ILocatorService
 {
     /// <summary>
     /// Lazy-loaded list of locations.
@@ -30,15 +30,7 @@ internal sealed class Locator(
     private IList<Location>? _locations;
 
     public IList<Location> Locations =>
-        _locations ??= LoadFromFile(options.LayoutFile);
-
-    /// <summary>
-    /// Reads the layout file and creates a dictionary of inverter locations.
-    /// </summary>
-    /// <param name="options">Configuration options accessor.</param>
-    /// <param name="logger">Logger instance.e</param>
-    public Locator(IOptions<LocatorOptions> options, ILogger<Locator> logger)
-        : this(new FileSystem(), options.Value, logger) { }
+        _locations ??= LoadFromFile(options.Value.LayoutFile);
 
     /// <summary>
     /// Reads the layout file and creates a dictionary of inverter locations.
@@ -52,25 +44,25 @@ internal sealed class Locator(
         {
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                logger.LogInformation("No layout file specified");
+                logger.LogInformation(LogEvents.NoLayoutFile, "No layout file specified");
                 return [];
             }
 
             if (!fileSystem.File.Exists(fileName))
             {
-                logger.LogError("Layout file {File} does not exist", fileName);
+                logger.LogError(LogEvents.LayoutFileNotFound, "Layout file {File} does not exist", fileName);
                 return [];
             }
 
             var text = fileSystem.File.ReadAllText(fileName);
             var dto = JsonSerializer.Deserialize<LayoutDTO>(text);
             var list = dto?.ToLocations().ToList() ?? [];
-            logger.LogInformation("Loaded {Count} locations from {File}", list.Count, fileName);
+            logger.LogInformation(LogEvents.LayoutFileLoaded, "Loaded {Count} locations from {File}", list.Count, fileName);
             return list;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to parse {File}", fileName);
+            logger.LogError(LogEvents.LayoutFileFormatError, ex, "Failed to parse {File}", fileName);
             return [];
         }
     }

@@ -1,8 +1,7 @@
-using Microsoft.Extensions.Configuration.Json;
-
-using Serilog;
-
 namespace Anar.Extensions;
+
+using Microsoft.Extensions.Configuration.Json;
+using Serilog;
 
 public static class DockerExtensions
 {

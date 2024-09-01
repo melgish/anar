@@ -1,7 +1,11 @@
-using System.Text.Json.Serialization;
-
+// spell-checker: words Enphase
 namespace Anar.Services.Gateway;
 
+using System.Text.Json.Serialization;
+
+/// <summary>
+/// Represents inverter data from the Enphase gateway.
+/// </summary>
 internal sealed record Inverter
 {
     [JsonPropertyName("serialNumber")]
