@@ -75,11 +75,11 @@ public class SpamFilterTests
         _timeProvider.SetTwoDaysAgo();
         spamFilter.IsOkToSend(new SimpleAlert("test"));
         spamFilter.IsOkToSend(new ThumbprintAlert("expected", "actual"));
-        spamFilter.IsOkToSend(new Alert());
+        spamFilter.IsOkToSend(new SimpleAlert("other"));
         _timeProvider.SetNow();
 
         // Act
-        spamFilter.IsOkToSend(new Alert());
+        spamFilter.IsOkToSend(new SimpleAlert("other"));
         spamFilter.FlushExpired();
 
         // Assert
