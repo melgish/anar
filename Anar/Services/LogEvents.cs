@@ -7,8 +7,8 @@ internal static class LogEvents
     public static readonly EventId LayoutFileNotFound = 2002;
     public static readonly EventId LayoutFileFormatError = 2003;
 
-    public static readonly EventId WorkerExecuteError = 2004;
-    public static readonly EventId NotifyExecuteError = 2005;
+    public static readonly EventId DataWorkerError = 2004;
+    public static readonly EventId NotifyWorkerError = 2005;
 
     // WARNINGS 3000-3999
     public static readonly EventId GetInvertersAuthorizationError = 3001;

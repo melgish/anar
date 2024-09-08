@@ -1,6 +1,7 @@
 namespace Anar.Tests.Services.Notify;
 
 using Anar.Services.Notify;
+
 public class NotifyQueueTests
 {
     [Fact]

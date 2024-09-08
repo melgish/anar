@@ -3,23 +3,16 @@ namespace Anar.Tests.Services.Notify;
 using Anar.Services;
 using Anar.Services.Notify;
 using Microsoft.Extensions.Logging.Testing;
-using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using System.Net;
 
-public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOptions>
+public sealed class NotifyProcessorTests : IHttpClientFactory
 {
-    private NotifyOptions Options { get; set; } = new()
-    {
-        PollingInterval = TimeSpan.FromMilliseconds(100)
-    };
     private readonly Mock<HttpMessageHandler> _mockHandler = new();
     private readonly NotifyQueue _notifyQueue = new();
-    private readonly FakeLogger<NotifyService> _fakeLogger = new();
+    private readonly FakeLogger<NotifyProcessor> _fakeLogger = new();
     private readonly Mock<ISpamFilter> _spamFilter = new();
-
-    NotifyOptions IOptions<NotifyOptions>.Value => Options;
 
     HttpClient IHttpClientFactory.CreateClient(string name)
         => new(_mockHandler.Object)
@@ -27,11 +20,10 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
             BaseAddress = new Uri("http://localhost/api/v1/notify/alerts"),
         };
 
-    private NotifyService Setup(HttpStatusCode statusCode)
+    private NotifyProcessor CreateProcessor(HttpStatusCode statusCode)
     {
         _notifyQueue.Enqueue(new SimpleAlert("Test message1"));
-        _notifyQueue.Enqueue(new SimpleAlert("Test message2"));
-
+        _notifyQueue.Enqueue(new GatewayTokenExpirationAlert(DateTime.UtcNow));
 
         _spamFilter
             .SetupSequence(x => x.IsOkToSend(It.IsAny<Alert>()))
@@ -51,9 +43,9 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
                 Content = new StringContent("{}")
             });
 
-        return new NotifyService(
-            this, _notifyQueue,
+        return new NotifyProcessor(
             this,
+            _notifyQueue,
             _spamFilter.Object,
             _fakeLogger
         );
@@ -63,7 +55,7 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
     public async Task ProcessNotificationsAsync_WhenShuttingDown_DoesNotSend()
     {
         // Arrange
-        var service = Setup(HttpStatusCode.OK);
+        var service = CreateProcessor(HttpStatusCode.OK);
 
         // Act
         await service.ProcessNotificationsAsync(new(true));
@@ -82,7 +74,7 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
     public async Task ProcessNotificationsAsync_WhenOkToSend_Sends()
     {
         // Arrange
-        var service = Setup(HttpStatusCode.OK);
+        var service = CreateProcessor(HttpStatusCode.OK);
 
         // Act
         await service.ProcessNotificationsAsync(CancellationToken.None);
@@ -102,7 +94,7 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
     public async Task ProcessNotificationsAsync_WhenRequestFails_LogsWarning()
     {
         // Arrange
-        var service = Setup(HttpStatusCode.NotFound);
+        var service = CreateProcessor(HttpStatusCode.NotFound);
 
         // Act
         await service.ProcessNotificationsAsync(CancellationToken.None);
@@ -116,5 +108,4 @@ public sealed class NotifyServiceTests : IHttpClientFactory, IOptions<NotifyOpti
             ItExpr.IsAny<CancellationToken>()
         );
     }
-
 }

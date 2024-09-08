@@ -1,8 +1,8 @@
+namespace Anar.Services.Locator;
+
 using Microsoft.Extensions.Options;
 using System.IO.Abstractions;
 using System.Text.Json;
-
-namespace Anar.Services.Locator;
 
 internal interface ILocatorService
 {
