@@ -4,7 +4,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Anar-e3577f76-ab06-4227-8831-6d6e7e2c7374</UserSecretsId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="InfluxDB.Client" Version="4.18.0" />

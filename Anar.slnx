@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Anar.Tests/Anar.Tests.csproj" />
+  <Project Path="Anar/Anar.csproj" />
+</Solution>
