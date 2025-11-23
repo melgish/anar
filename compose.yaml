@@ -1,8 +1,5 @@
 services:
   anar:
-    build:
-      context: ./Anar
-      dockerfile: ./Dockerfile
     container_name: "anar"
     hostname: "anar"
     image: "anar"
