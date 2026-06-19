@@ -491,3 +491,4 @@ compose.override.yaml
 .mono
 .env
 .coverage
+publish.sh

@@ -1,6 +1,6 @@
-using Anar.Services.Worker;
-
 namespace Anar.Tests.Services.Worker;
+
+using Anar.Services.Worker;
 
 public sealed class ExtensionsTests
 {

@@ -1,6 +1,5 @@
 
 using Anar.Extensions;
-using Anar.Services;
 using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
@@ -36,8 +35,13 @@ try
     builder.Services.AddSingleton(TimeProvider.System);
 
     // Notify
-    // Service is optional, if not configured, use a no-op implementation.
-    if (builder.Configuration.GetSection("Notify").Exists())
+    // Notifications are optional, if not configured,
+    // use a no-op implementation of the queue for consumers.
+    if (!builder.Configuration.GetSection("Notify").Exists())
+    {
+        builder.Services.AddSingleton<INotifyQueue, NoOpNotifyQueue>();
+    }
+    else
     {
         builder.Services
             .AddSingleton<INotifyQueue, NotifyQueue>()
@@ -47,9 +51,10 @@ try
             .ValidateOnStart();
 
         builder.Services
-            .AddHostedService<NotifyService>()
+            .AddHostedService<NotifyWorker>()
+            .AddSingleton<INotifyProcessor, NotifyProcessor>()
             .AddSingleton<ISpamFilter, SpamFilter>()
-            .AddHttpClient(nameof(NotifyService), (sp, client) =>
+            .AddHttpClient(nameof(NotifyProcessor), (sp, client) =>
             {
                 var options = sp.GetRequiredService<IOptions<NotifyOptions>>().Value;
                 client.BaseAddress = options.Uri;
@@ -57,12 +62,6 @@ try
                 client.DefaultRequestHeaders.Accept.Add(new(MediaTypeNames.Application.Json));
                 client.DefaultRequestHeaders.Authorization = new("Bearer", options.Token);
             });
-    }
-    else
-    {
-        // When disabled just add the empty queue for publishers to use.
-        builder.Services
-            .AddSingleton<INotifyQueue, NoOpNotifyQueue>();
     }
 
     // Gateway
@@ -112,8 +111,9 @@ try
 
     // Worker
     builder.Services
-        .AddHostedService<WorkerService>()
-        .AddOptions<WorkerOptions>()
+        .AddHostedService<DataWorker>()
+        .AddSingleton<IDataProcessor, DataProcessor>()
+        .AddOptions<DataOptions>()
         .BindConfiguration("Worker")
         .ValidateDataAnnotations()
         .ValidateOnStart();

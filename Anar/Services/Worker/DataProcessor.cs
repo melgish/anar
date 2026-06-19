@@ -1,24 +1,26 @@
+namespace Anar.Services.Worker;
+
 using Anar.Services.Gateway;
 using Anar.Services.Influx;
 using Anar.Services.Locator;
 
-using Microsoft.Extensions.Options;
+interface IDataProcessor
+{
+    Task ProcessDataAsync(CancellationToken stoppingToken);
+}
 
-namespace Anar.Services.Worker;
-
-internal sealed class WorkerService(
-    IOptions<WorkerOptions> options,
+internal sealed class DataProcessor(
     ILocatorService locator,
     IGatewayService gatewayService,
     IInfluxService influxService,
-    ILogger<WorkerService> logger
-) : BackgroundService
+    ILogger<DataProcessor> logger
+) : IDataProcessor
 {
     /// <summary>
     /// Reads data from IQ Gateway and pushes it to InfluxDB
     /// </summary>
     /// <param name="stoppingToken"></param>
-    internal async Task ProcessData(CancellationToken stoppingToken)
+    public async Task ProcessDataAsync(CancellationToken stoppingToken)
     {
         logger.LogDebug("Processing");
         var inverters = await gatewayService.GetInvertersAsync(stoppingToken);
@@ -48,31 +50,5 @@ internal sealed class WorkerService(
                 .Append(wattsNow.ToPointData())
                 .ToList()
         , stoppingToken);
-    }
-
-    /// <summary>
-    /// Periodically reads data from IQ Gateway and pushes it to InfluxDB
-    /// </summary>
-    /// <param name="stoppingToken"></param>
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        try
-        {
-            logger.LogInformation("Starting polling");
-            using var timer = new PeriodicTimer(options.Value.Interval);
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await ProcessData(stoppingToken);
-                await timer.WaitForNextTickAsync(stoppingToken);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // These are expected on CTRL-C shutdown
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(LogEvents.WorkerExecuteError, ex, "Worker error");
-        }
     }
 }
